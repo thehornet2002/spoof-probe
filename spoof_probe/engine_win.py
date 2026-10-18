@@ -94,7 +94,40 @@ class WindowsNpcapEngine:
         if not self.wpcap:
             raise RuntimeError("Npcap is not installed or wpcap.dll not found. Please install Npcap from https://npcap.com")
 
+        # Explicit 64-bit prototype declarations to prevent pointer truncation & access violations
+        self.wpcap.pcap_open_live.restype = c_void_p
+        self.wpcap.pcap_open_live.argtypes = [c_char_p, c_int, c_int, c_int, c_char_p]
+
+        self.wpcap.pcap_close.restype = None
+        self.wpcap.pcap_close.argtypes = [c_void_p]
+
+        self.wpcap.pcap_sendpacket.restype = c_int
+        self.wpcap.pcap_sendpacket.argtypes = [c_void_p, c_char_p, c_int]
+
+        self.wpcap.pcap_next_ex.restype = c_int
+        self.wpcap.pcap_next_ex.argtypes = [c_void_p, POINTER(POINTER(pcap_pkthdr)), POINTER(c_void_p)]
+
+        self.wpcap.pcap_compile.restype = c_int
+        self.wpcap.pcap_compile.argtypes = [c_void_p, POINTER(bpf_program), c_char_p, c_int, c_uint]
+
+        self.wpcap.pcap_setfilter.restype = c_int
+        self.wpcap.pcap_setfilter.argtypes = [c_void_p, POINTER(bpf_program)]
+
+        self.wpcap.pcap_freecode.restype = None
+        self.wpcap.pcap_freecode.argtypes = [POINTER(bpf_program)]
+
+        self.wpcap.pcap_geterr.restype = c_char_p
+        self.wpcap.pcap_geterr.argtypes = [c_void_p]
+
         self.iphlpapi = ctypes.windll.iphlpapi
+        self.iphlpapi.GetBestRoute.restype = c_uint
+        self.iphlpapi.GetBestRoute.argtypes = [c_uint, c_uint, POINTER(MIB_IPFORWARDROW)]
+
+        self.iphlpapi.SendARP.restype = c_uint
+        self.iphlpapi.SendARP.argtypes = [c_uint, c_uint, c_void_p, POINTER(c_uint)]
+
+        self.iphlpapi.GetAdaptersInfo.restype = c_uint
+        self.iphlpapi.GetAdaptersInfo.argtypes = [c_void_p, POINTER(c_uint)]
 
     def resolve_interface_and_macs(self, dst_ip: str) -> Tuple[bytes, bytes, str]:
         """Resolves (src_mac, dst_gateway_mac, dev_name) for destination IP."""
@@ -159,9 +192,15 @@ class WindowsNpcapEngine:
 
     def send_frame(self, handle: c_void_p, src_mac: bytes, dst_mac: bytes, ip_packet: bytes):
         """Prepends Ethernet header and transmits via pcap_sendpacket."""
+        if not handle:
+            raise RuntimeError("Cannot send frame: pcap handle is null")
         eth_hdr = dst_mac + src_mac + b"\x08\x00"  # EtherType IPv4
         frame = eth_hdr + ip_packet
-        self.wpcap.pcap_sendpacket(handle, frame, len(frame))
+        res = self.wpcap.pcap_sendpacket(handle, frame, len(frame))
+        if res != 0:
+            err = self.wpcap.pcap_geterr(handle)
+            err_msg = err.decode("ascii", "ignore") if err else "unknown"
+            raise RuntimeError(f"pcap_sendpacket failed: {err_msg}")
 
     def close(self, handle: c_void_p):
         if handle:
