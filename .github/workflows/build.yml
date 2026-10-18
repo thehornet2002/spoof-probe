@@ -32,7 +32,7 @@ jobs:
 
       - name: Build standalone Linux binaries (CLI and GUI)
         run: |
-          pyinstaller --onefile --name spoof-probe-linux main.py
+          pyinstaller --onefile --exclude-module tkinter --exclude-module _tkinter --name spoof-probe-linux main.py
           pyinstaller --onefile --name spoof-probe-gui-linux main.py
 
       - name: Upload Linux artifacts

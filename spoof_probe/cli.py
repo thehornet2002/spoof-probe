@@ -1,16 +1,35 @@
 import argparse
+import os
 import sys
 
-from .gui import run_gui
 from .iplist import parse_ip_file
 from .runner import ProbeRunner
 
 
-def main():
-    # If no arguments provided or 'gui' specified, launch GUI directly
-    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1].lower() in ("gui", "--gui")):
+def launch_gui():
+    try:
+        from .gui import run_gui
         run_gui()
+    except (ImportError, Exception) as e:
+        print(f"[!] GUI is not available on this environment: {e}")
+        print("[!] For headless servers, please use CLI commands ('send' or 'recv'). Run with --help for details.")
+        sys.exit(1)
+
+
+def main():
+    # Explicit GUI request
+    if len(sys.argv) == 2 and sys.argv[1].lower() in ("gui", "--gui"):
+        launch_gui()
         return
+
+    # No arguments provided
+    if len(sys.argv) == 1:
+        if sys.platform != "win32" and not os.environ.get("DISPLAY"):
+            # Headless Linux server -> show CLI help
+            sys.argv.append("--help")
+        else:
+            launch_gui()
+            return
 
     parser = argparse.ArgumentParser(
         prog="spoof-probe",
