@@ -1,0 +1,6 @@
+# Example IP list for spoof-probe
+# Supported formats: Single IP, CIDR, or Range (start-end)
+
+1.1.1.1
+8.8.8.8-8.8.8.10
+104.16.0.0/24
