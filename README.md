@@ -31,7 +31,21 @@ source .venv/bin/activate
 
 ---
 
-## Usage
+## GUI and CLI Modes
+
+### 1. Graphical User Interface (GUI)
+Run without arguments or with `gui`:
+```bash
+python main.py gui
+```
+Or double-click the prebuilt `spoof-probe-gui-windows.exe`.
+
+### 2. Command Line Interface (CLI)
+Use `send` or `recv` subcommands for automation and headless servers.
+
+---
+
+## Usage (CLI Examples)
 
 ### Scenario A: Test Inbound from Windows (Iran) to Linux (Server)
 
