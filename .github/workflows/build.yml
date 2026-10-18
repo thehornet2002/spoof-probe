@@ -26,18 +26,22 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo apt-get update && sudo apt-get install -y python3-tk
           python -m pip install --upgrade pip
           pip install pyinstaller
 
-      - name: Build standalone Linux binary
+      - name: Build standalone Linux binaries (CLI and GUI)
         run: |
           pyinstaller --onefile --name spoof-probe-linux main.py
+          pyinstaller --onefile --name spoof-probe-gui-linux main.py
 
-      - name: Upload Linux artifact
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: spoof-probe-linux
-          path: dist/spoof-probe-linux
+          name: spoof-probe-linux-binaries
+          path: |
+            dist/spoof-probe-linux
+            dist/spoof-probe-gui-linux
           retention-days: 7
 
   build-windows:
@@ -56,15 +60,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller
 
-      - name: Build standalone Windows executable
+      - name: Build standalone Windows executables (CLI and GUI)
         run: |
-          pyinstaller --onefile --name spoof-probe-windows.exe main.py
+          pyinstaller --onefile --console --name spoof-probe-windows.exe main.py
+          pyinstaller --onefile --noconsole --name spoof-probe-gui-windows.exe main.py
 
-      - name: Upload Windows artifact
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: spoof-probe-windows
-          path: dist/spoof-probe-windows.exe
+          name: spoof-probe-windows-binaries
+          path: |
+            dist/spoof-probe-windows.exe
+            dist/spoof-probe-gui-windows.exe
           retention-days: 7
 
   release:
@@ -91,4 +98,6 @@ jobs:
           generate_release_notes: true
           files: |
             dist/spoof-probe-linux
+            dist/spoof-probe-gui-linux
             dist/spoof-probe-windows.exe
+            dist/spoof-probe-gui-windows.exe

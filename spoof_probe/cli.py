@@ -1,17 +1,26 @@
 import argparse
 import sys
 
+from .gui import run_gui
 from .iplist import parse_ip_file
 from .runner import ProbeRunner
 
 
 def main():
+    # If no arguments provided or 'gui' specified, launch GUI directly
+    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1].lower() in ("gui", "--gui")):
+        run_gui()
+        return
+
     parser = argparse.ArgumentParser(
         prog="spoof-probe",
         description="Cross-platform Bidirectional Spoofed IP & Protocol Probe (TCP, UDP, ICMP)",
     )
 
-    subparsers = parser.add_subparsers(dest="mode", required=True, help="Operating mode: sender or receiver")
+    subparsers = parser.add_subparsers(dest="mode", required=True, help="Operating mode: sender, receiver, or gui")
+
+    # GUI subcommand
+    subparsers.add_parser("gui", help="Launch Graphical User Interface")
 
     # Sender subcommand
     p_send = subparsers.add_parser("send", help="Send spoofed packets to a remote target")
